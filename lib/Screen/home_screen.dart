@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:news/Screen/aerobic_screen.dart';
 import 'package:news/model/gymelist_model.dart';
 import 'package:news/view_model/activities_viewmodel.dart';
 import 'package:news/view_model/gym_viewmodel.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,6 +17,27 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late GoogleMapController mapController;
+
+  bool _isLocationPermissionGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    final status = await Permission.location.request();
+    if (status.isGranted) {
+      setState(() {
+        _isLocationPermissionGranted = true;
+      });
+    } else if (status.isDenied) {
+    } else if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var fitness = Provider.of<FitnessModeProvider>(context);
@@ -201,11 +224,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    height: 200,
-                    child: Expanded(
+                if (_isLocationPermissionGranted)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      height: 200,
                       child: GoogleMap(
                         initialCameraPosition: const CameraPosition(
                           target: LatLng(28.583745, 77.3155413),
@@ -218,7 +241,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                ),
+
+                if (!_isLocationPermissionGranted)
+                  const Text(
+                    'Location permission is required to display the map.',
+                    style: TextStyle(color: Colors.white),
+                  ),
               ],
             ),
           ),
